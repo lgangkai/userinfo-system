@@ -1,0 +1,90 @@
+syntax = "proto3";
+
+option go_package = "./userinfo";
+
+service Userinfo {
+  rpc GetProfile(GetProfileRequest) returns (GetProfileResponse);
+  rpc DeleteProfile(DeleteProfileRequest) returns (DeleteProfileResponse);
+  rpc CreateProfile(CreateProfileRequest) returns (CreateProfileResponse);
+  rpc UpdateProfile(UpdateProfileRequest) returns (UpdateProfileResponse);
+  rpc Register(RegisterRequest) returns (RegisterResponse);
+  rpc Login(LoginRequest) returns (LoginResponse);
+  rpc Logout(LogoutRequest) returns (LogoutResponse);
+  rpc Authenticate(AuthRequest) returns (AuthResponse);
+}
+
+message GetProfileRequest {
+  uint64 user_id = 1;
+}
+
+message GetProfileResponse {
+  Profile profile = 1;
+}
+
+message DeleteProfileRequest {
+  uint64 user_id = 1;
+}
+
+message DeleteProfileResponse {
+
+}
+
+message CreateProfileRequest {
+  Profile profile = 1;
+}
+
+message CreateProfileResponse {
+
+}
+
+message UpdateProfileRequest {
+  Profile profile = 1;
+}
+
+message UpdateProfileResponse {
+
+}
+
+message Profile {
+  uint64 id = 1;
+  uint64 user_id = 2;
+  string username = 3;
+  string birthday = 4;
+  string email =5;
+  string avatar = 6;
+}
+
+message RegisterRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message RegisterResponse {
+
+}
+
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message LoginResponse {
+  string token = 1;
+}
+
+message LogoutRequest {
+
+}
+
+message LogoutResponse {
+
+}
+
+message AuthRequest {
+  string token = 1;
+}
+
+message AuthResponse {
+  uint64 user_id = 1;
+  string email = 2;
+}

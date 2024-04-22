@@ -1,0 +1,17 @@
+# node settings
+name: "etcdnode2"
+data-dir: "/conf-data/data"
+wal-dir: "/conf-data/wal"
+listen-peer-urls: "http://0.0.0.0:2380"
+listen-client-urls: "http://0.0.0.0:2379"
+
+# cluster settings
+initial-advertise-peer-urls: "http://etcd2:2380"
+initial-cluster: "etcdnode0=http://etcd0:2380,etcdnode1=http://etcd1:2380,etcdnode2=http://etcd2:2380"
+initial-cluster-state: "new"
+initial-cluster-token: "tkn"
+advertise-client-urls: "http://etcd2:2379"
+logger: "zap"
+log-level: "info"
+log-outputs:
+  - "stderr"

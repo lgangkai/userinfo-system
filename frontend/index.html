@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .login-container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.1);
+            width: 300px;
+        }
+        .login-container h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .login-form input[type="text"],
+        .login-form input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        .login-form input[type="submit"] {
+            width: 100%;
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .login-form input[type="submit"]:hover {
+            background-color: #45a049;
+        }
+        .register-link {
+            text-align: center;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+<div class="login-container">
+    <h2>Login</h2>
+    <form class="login-form" id="loginForm" action="http://localhost:8080/api/login" method="post">
+        <input type="text" name="username" id="username" placeholder="Username" required>
+        <input type="password" name="password" id="password" placeholder="Password" required>
+        <input type="submit" value="Login">
+    </form>
+    <div class="register-link">
+        <p>Don't have an account? <a href="#" id="registerLink">Register here</a></p>
+    </div>
+</div>
+
+<div id="registerForm" class="login-container" style="display: none;">
+    <h2>Register</h2>
+    <form id="registrationForm" action="http://localhost:8080/api/register" method="post">
+        <input type="text" name="newUsername" id="newUsername" placeholder="New Username" required>
+        <input type="password" name="newPassword" id="newPassword" placeholder="New Password" required>
+        <input type="password" name="confirmPassword" id="confirmPassword" placeholder="Confirm Password" required>
+        <input type="submit" value="Register">
+    </form>
+    <div class="register-link">
+        <p>Already have an account? <a href="#" id="loginLink">Login here</a></p>
+    </div>
+</div>
+
+<script>
+    document.getElementById("registerLink").addEventListener("click", function(event){
+        event.preventDefault();
+        document.getElementById("loginForm").style.display = "none";
+        document.getElementById("registerForm").style.display = "block";
+    });
+
+    document.getElementById("loginLink").addEventListener("click", function(event){
+        event.preventDefault();
+        document.getElementById("loginForm").style.display = "block";
+        document.getElementById("registerForm").style.display = "none";
+    });
+</script>
+</body>
+</html>
