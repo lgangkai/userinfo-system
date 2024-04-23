@@ -11,6 +11,7 @@ require (
 	github.com/redis/go-redis/v9 v9.5.1
 	gopkg.in/yaml.v3 v3.0.1
 	protos v0.0.0-00010101000000-000000000000
+	loggers v0.0.0
 )
 
 require (
@@ -75,3 +76,5 @@ require (
 replace protos => ../proto
 
 replace errs => ../err
+
+replace loggers => ../logger

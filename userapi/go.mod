@@ -8,6 +8,7 @@ require (
 	github.com/gin-gonic/gin v1.9.1
 	protos v0.0.0-00010101000000-000000000000
 	errs v0.0.0
+	loggers v0.0.0
 )
 
 require (
@@ -82,3 +83,5 @@ require (
 replace protos => ../proto
 
 replace errs => ../err
+
+replace loggers => ../logger

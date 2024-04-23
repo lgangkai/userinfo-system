@@ -1,7 +1,6 @@
 # Userinfo System
 This is a simple Go (Golang) backend system example that users can register accounts, login, check and update their profiles. This project contains these points that you can simply refer to:
-
-#### gin, microservice (protobuf, grpc, go-micro, etcd), JWT, dependency injection (wire), project structure, docker, Mysql read/write split and master/slave replication, redis cache, nginx reverse proxy and load balancer.
+#### gin, microservice (protobuf, grpc, go-micro, etcd), JWT, dependency injection (wire), project structure, docker, Mysql read/write split and master/slave replication, redis cache, nginx reverse proxy and load balancer, benchmark test (wrk, lua).
 
 For more information about the project design, please refer to [the system design doc](User Infomation System Design.pdf).
 
@@ -343,3 +342,5 @@ dock
 tips：the address must be set to 0.0.0.0 or you can not access container from host browser
 
 go install github.com/asim/go-micro/cmd/protoc-gen-micro/v3@latest
+
+ab -n 10000 -c 100 -C 'access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTM5NDIwNzUsInVzZXJfaWQiOjEsImVtYWlsIjoiMTIzQGdtYWlsLmNvbSJ9.NY7_6E3nt_P2X9fTNofscnUPi9nwVeC6WWqZiLiAaz0; Path=/; HttpOnly; Expires=Wed, 24 Apr 2024 07:01:15 GMT;' http://localhost/api/user/profile
