@@ -8,6 +8,7 @@ package wire
 
 import (
 	"github.com/redis/go-redis/v9"
+	"loggers"
 	account2 "user-server/biz/account"
 	profile2 "user-server/biz/profile"
 	"user-server/dao"
@@ -18,13 +19,13 @@ import (
 
 // Injectors from wire.go:
 
-func InitUserinfoHandler(dbMaster *dao.DBMaster, dbSlave *dao.DBSlave, clusterClient *redis.ClusterClient) *handler.UserinfoHandlerImpl {
-	profileDao := dao.NewProfileDao(dbMaster, dbSlave, clusterClient)
-	profileService := profile.NewProfileService(profileDao)
-	profileBiz := profile2.NewProfileBiz(profileService)
-	userDao := dao.NewUserDao(dbMaster)
-	accountService := account.NewAccountService(userDao)
-	accountBiz := account2.NewAccountBiz(accountService)
+func InitUserinfoHandler(dbMaster *dao.DBMaster, dbSlave *dao.DBSlave, clusterClient *redis.ClusterClient, loggerLogger *logger.Logger) *handler.UserinfoHandlerImpl {
+	profileDao := dao.NewProfileDao(dbMaster, dbSlave, clusterClient, loggerLogger)
+	profileService := profile.NewProfileService(profileDao, loggerLogger)
+	profileBiz := profile2.NewProfileBiz(profileService, loggerLogger)
+	userDao := dao.NewUserDao(dbMaster, loggerLogger)
+	accountService := account.NewAccountService(userDao, loggerLogger)
+	accountBiz := account2.NewAccountBiz(accountService, loggerLogger)
 	userinfoHandlerImpl := handler.NewUserinfoHandlerImpl(profileBiz, accountBiz)
 	return userinfoHandlerImpl
 }

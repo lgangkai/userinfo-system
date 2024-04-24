@@ -1,26 +1,22 @@
 package main
 
 import (
+	"context"
 	"github.com/gin-gonic/gin"
 	"loggers"
 	"user-api/handler"
 )
 
 func main() {
-	log := logger.NewLogger()
-	context := &gin.Context{}
-	context.Set("request_id", 123456)
-	context.Set("user_id", 123)
-	log.Debug(context, "test", 12345667890)
 	server := &Server{}
 	if err := server.Init(); err != nil {
 		panic(err)
 	}
 
-	client := &handler.Client{UserinfoClient: server.UserinfoClient}
+	client := handler.NewClient(context.Background(), server.UserinfoClient, logger.NewLogger())
 
 	r := gin.Default()
-	r.Use(handler.Log)
+	r.Use(client.GenRequestId, client.SetTraceData, client.Log)
 	apiAccount := r.Group("api/account")
 	{
 		apiAccount.POST("login", client.Login)

@@ -2,7 +2,7 @@ package model
 
 import (
 	"fmt"
-	"github.com/asim/go-micro/v3/logger"
+	"log"
 	"time"
 )
 
@@ -34,7 +34,7 @@ func (p *Profile) UpdateFields() ([]string, []any) {
 		fields = append(fields, "birthday")
 		date, err := time.Parse("2006-01-02", p.Birthday)
 		if err != nil {
-			logger.Warn("Parse birthday failed, using default date. Err: ", err.Error())
+			log.Println("Parse birthday failed, using default date. Err: ", err.Error())
 			date = time.Date(1970, 1, 1, 0, 0, 0, 0, time.Local)
 		}
 		args = append(args, date)

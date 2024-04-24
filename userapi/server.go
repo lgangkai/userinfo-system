@@ -4,8 +4,8 @@ import (
 	"flag"
 	"github.com/asim/go-micro/plugins/registry/etcd/v3"
 	"github.com/asim/go-micro/v3"
-	"github.com/asim/go-micro/v3/logger"
 	"github.com/asim/go-micro/v3/registry"
+	"log"
 	"protos/userinfo"
 	"user-api/conf"
 )
@@ -16,17 +16,17 @@ type Server struct {
 }
 
 func (s *Server) Init() error {
-	logger.Info("Init server...")
+	log.Println("Init server...")
 	// 1. load config file.
 	var confPath string
 	flag.StringVar(&confPath, "config", "conf/userapi.yaml", "define config file")
 	flag.Parse()
 	config, err := conf.LoadConfig(confPath)
 	if err != nil {
-		logger.Error("load config file error, err: ", err)
+		log.Println("load config file error, err: ", err)
 		return err
 	}
-	logger.Info("config file loaded, config: ", config)
+	log.Println("config file loaded, config: ", config)
 
 	serverConf := config.Server
 	microConf := config.Micro

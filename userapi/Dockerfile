@@ -3,12 +3,16 @@ MAINTAINER gangkai
 RUN mkdir proto
 RUN mkdir userapi
 RUN mkdir err
+RUN mkdir logger
 COPY userapi /userapi
 COPY proto /proto
 COPY err /err
+COPY logger /logger
 WORKDIR /proto
 RUN go mod download
 WORKDIR /err
+RUN go mod download
+WORKDIR /logger
 RUN go mod download
 WORKDIR /userapi
 RUN go mod download

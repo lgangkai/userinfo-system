@@ -2,7 +2,7 @@ package profile
 
 import (
 	"context"
-	"github.com/asim/go-micro/v3/logger"
+	"loggers"
 	"protos/userinfo"
 	"user-server/model"
 	"user-server/service/profile"
@@ -10,18 +10,22 @@ import (
 
 type ProfileBiz struct {
 	profileService *profile.ProfileService
+	logger         *logger.Logger
 }
 
-func NewProfileBiz(profileService *profile.ProfileService) *ProfileBiz {
-	return &ProfileBiz{profileService: profileService}
+func NewProfileBiz(profileService *profile.ProfileService, logger *logger.Logger) *ProfileBiz {
+	return &ProfileBiz{
+		profileService: profileService,
+		logger:         logger,
+	}
 }
 
 func (b *ProfileBiz) GetProfile(ctx context.Context, in *userinfo.GetProfileRequest, out *userinfo.GetProfileResponse) error {
-	logger.Info("Call ProfileBiz.GetProfile, request: ", in)
+	b.logger.Info(ctx, "Call ProfileBiz.GetProfile, request: ", in)
 	id := in.GetUserId()
 	p, err := b.profileService.GetProfile(ctx, id)
 	if err != nil {
-		logger.Error("Get profile failed, err: ", err.Error())
+		b.logger.Error(ctx, "Get profile failed, err: ", err.Error())
 		return err
 	}
 	out.Profile = &userinfo.Profile{
@@ -32,24 +36,24 @@ func (b *ProfileBiz) GetProfile(ctx context.Context, in *userinfo.GetProfileRequ
 		Email:    p.Email,
 		Avatar:   p.AvatarUrl,
 	}
-	logger.Info("Call ProfileBiz.GetProfile successfully.")
+	b.logger.Info(ctx, "Call ProfileBiz.GetProfile successfully.")
 	return nil
 }
 
 func (b *ProfileBiz) DeleteProfile(ctx context.Context, in *userinfo.DeleteProfileRequest, out *userinfo.DeleteProfileResponse) error {
-	logger.Info("Call ProfileBiz.DeleteProfile, request: ", in)
+	b.logger.Info(ctx, "Call ProfileBiz.DeleteProfile, request: ", in)
 	id := in.GetUserId()
 	err := b.profileService.DeleteProfile(ctx, id)
 	if err != nil {
-		logger.Error("Delete profile failed, err: ", err.Error())
+		b.logger.Error(ctx, "Delete profile failed, err: ", err.Error())
 		return err
 	}
-	logger.Info("Call ProfileBiz.DeleteProfile successfully.")
+	b.logger.Info(ctx, "Call ProfileBiz.DeleteProfile successfully.")
 	return nil
 }
 
 func (b *ProfileBiz) CreateProfile(ctx context.Context, in *userinfo.CreateProfileRequest, out *userinfo.CreateProfileResponse) error {
-	logger.Info("Call ProfileBiz.CreateProfile, request: ", in)
+	b.logger.Info(ctx, "Call ProfileBiz.CreateProfile, request: ", in)
 	p := in.GetProfile()
 	mp := &model.Profile{
 		Id:        p.Id,
@@ -59,17 +63,17 @@ func (b *ProfileBiz) CreateProfile(ctx context.Context, in *userinfo.CreateProfi
 		Email:     p.Email,
 		AvatarUrl: p.Avatar,
 	}
-	err := b.profileService.CreateProfile(mp)
+	err := b.profileService.CreateProfile(ctx, mp)
 	if err != nil {
-		logger.Error("Create profile failed, err: ", err.Error())
+		b.logger.Error(ctx, "Create profile failed, err: ", err.Error())
 		return err
 	}
-	logger.Info("Call ProfileBiz.CreateProfile successfully.")
+	b.logger.Info(ctx, "Call ProfileBiz.CreateProfile successfully.")
 	return nil
 }
 
 func (b *ProfileBiz) UpdateProfile(ctx context.Context, in *userinfo.UpdateProfileRequest, out *userinfo.UpdateProfileResponse) error {
-	logger.Info("Call ProfileBiz.UpdateProfile, request: ", in)
+	b.logger.Info(ctx, "Call ProfileBiz.UpdateProfile, request: ", in)
 	p := in.GetProfile()
 	mp := &model.Profile{
 		Id:        p.Id,
@@ -81,9 +85,9 @@ func (b *ProfileBiz) UpdateProfile(ctx context.Context, in *userinfo.UpdateProfi
 	}
 	err := b.profileService.UpdateProfile(ctx, p.UserId, mp)
 	if err != nil {
-		logger.Error("Update profile failed, err: ", err.Error())
+		b.logger.Error(ctx, "Update profile failed, err: ", err.Error())
 		return err
 	}
-	logger.Info("Call ProfileBiz.UpdateProfile successfully.")
+	b.logger.Info(ctx, "Call ProfileBiz.UpdateProfile successfully.")
 	return nil
 }

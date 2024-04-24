@@ -1,2 +1,0 @@
-[Debug] 2024/04/23 20:17:27 logger.go:57: {request_id: 123456 user_id: 123} test 12345667890
-[Debug] 2024/04/23 20:19:09 logger.go:57: {request_id: 123456} test 12345667890

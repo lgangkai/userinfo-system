@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/asim/go-micro/v3/logger"
 	"github.com/redis/go-redis/v9"
+	"loggers"
 	"math/rand"
 	"time"
 	"user-server/model"
@@ -23,18 +23,20 @@ type ProfileDao struct {
 	dbMaster *DBMaster
 	dbSlave  *DBSlave
 	dbRedis  *redis.ClusterClient
+	logger   *logger.Logger
 }
 
-func NewProfileDao(dbMaster *DBMaster, dbSlave *DBSlave, dbRedis *redis.ClusterClient) *ProfileDao {
+func NewProfileDao(dbMaster *DBMaster, dbSlave *DBSlave, dbRedis *redis.ClusterClient, logger *logger.Logger) *ProfileDao {
 	return &ProfileDao{
 		dbMaster: dbMaster,
 		dbSlave:  dbSlave,
 		dbRedis:  dbRedis,
+		logger:   logger,
 	}
 }
 
 func (d *ProfileDao) GetProfileById(ctx context.Context, userId uint64) (*model.Profile, error) {
-	logger.Info("Call ProfileDao.GetProfile, userId: ", userId)
+	d.logger.Info(ctx, "Call ProfileDao.GetProfile.")
 	profile := &model.Profile{}
 
 	// 1. try to get value from redis first.
@@ -42,17 +44,17 @@ func (d *ProfileDao) GetProfileById(ctx context.Context, userId uint64) (*model.
 	profileStr, err := d.dbRedis.Get(ctx, rKey).Result()
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
-			logger.Info("Can not find in cache, go to sql DB.")
+			d.logger.Info(ctx, "Can not find in cache, go to sql DB.")
 		} else {
-			logger.Error("Can not get from cache, err: ", err.Error(), ". Go to sql DB")
+			d.logger.Error(ctx, "Can not get from cache, err: ", err.Error(), ". Go to sql DB")
 		}
 	} else {
-		logger.Info("Get profile json from cache, profile: ", profileStr)
+		d.logger.Info(ctx, "Get profile json from cache, profile: ", profileStr)
 		err = json.Unmarshal([]byte(profileStr), profile)
 		if err != nil {
-			logger.Error("json.Unmarshal failed, err: ", err.Error(), ". Go to sql DB")
+			d.logger.Error(ctx, "json.Unmarshal failed, err: ", err.Error(), ". Go to sql DB")
 		} else {
-			logger.Info("Get profile from cache succeeded.")
+			d.logger.Info(ctx, "Get profile from cache succeeded.")
 			return profile, nil
 		}
 	}
@@ -71,25 +73,25 @@ func (d *ProfileDao) GetProfileById(ctx context.Context, userId uint64) (*model.
 		&profile.AvatarUrl,
 	)
 	if err != nil {
-		logger.Error("Fail to scan data, err: ", err.Error())
+		d.logger.Error(ctx, "Fail to scan data, err: ", err.Error())
 		return nil, err
 	}
-	logger.Info("Get profile done, profile: ", profile)
+	d.logger.Info(ctx, "Get profile done, profile: ", profile)
 
 	// 3. write profile as json string back to cache.
 	pBytes, err := json.Marshal(profile)
 	if err != nil {
-		logger.Error("json.Marshal failed, err: ", err.Error(), ". It will not be saved to cache.")
+		d.logger.Error(ctx, "json.Marshal failed, err: ", err.Error(), ". It will not be saved to cache.")
 		return profile, nil
 	}
 	// set key expiration time as base time plus random time to avoid cache avalanche.
 	randExp := time.Duration(rand.Intn(REDIS_KEY_GET_PROFILE_EXPIRE_MAX_SHIFT)) * time.Second
 	err = d.dbRedis.Set(ctx, rKey, string(pBytes), REDIS_KEY_GET_PROFILE_EXPIRE_BASE+randExp).Err()
 	if err != nil {
-		logger.Error("redis set failed, err: ", err.Error(), ". It will not be saved to cache.")
+		d.logger.Error(ctx, "redis set failed, err: ", err.Error(), ". It will not be saved to cache.")
 		return profile, nil
 	}
-	logger.Info("Write back to redis done. key: ", rKey, ", value: ", string(pBytes),
+	d.logger.Info(ctx, "Write back to redis done. key: ", rKey, ", value: ", string(pBytes),
 		", expiration: ", REDIS_KEY_GET_PROFILE_EXPIRE_BASE+randExp)
 
 	return profile, nil
@@ -98,16 +100,17 @@ func (d *ProfileDao) GetProfileById(ctx context.Context, userId uint64) (*model.
 func (d *ProfileDao) Update(ctx context.Context, userId uint64, profile *model.Profile) error {
 	// use cache aside pattern to update DB and then delete from cache.
 	// 1. update data to mysql-master.
-	logger.Info("Call ProfileDao.Update, userId: ", userId)
+	d.logger.Info(ctx, "Call ProfileDao.Update.")
 	updateFields, args := profile.UpdateFields()
 	sqlString := profile.UpdateSql(updateFields, TAB_NAME_PROFILE)
-	logger.Debug("sql: ", sqlString)
-	_, err := d.dbMaster.Query(sqlString, append(args, userId)...)
+	d.logger.Debug(ctx, "sql: ", sqlString)
+	rows, err := d.dbMaster.Query(sqlString, append(args, userId)...)
+	defer rows.Close()
 	if err != nil {
-		logger.Error("Fail to update to sql DB, err: ", err.Error())
+		d.logger.Error(ctx, "Fail to update to sql DB, err: ", err.Error())
 		return err
 	}
-	logger.Info("Update profile to sql DB succeed.")
+	d.logger.Info(ctx, "Update profile to sql DB succeed.")
 
 	// 2. delete data from redis.
 	d.deleteFromCache(ctx, userId)
@@ -118,14 +121,15 @@ func (d *ProfileDao) Update(ctx context.Context, userId uint64, profile *model.P
 func (d *ProfileDao) Delete(ctx context.Context, userId uint64) error {
 	// use cache aside pattern to delete from DB and then delete from cache.
 	// 1. delete data from mysql-master.
-	logger.Info("Call ProfileDao.Delete, userId: ", userId)
+	d.logger.Info(ctx, "Call ProfileDao.Delete.")
 	sqlString := fmt.Sprintf("DELETE FROM %v WHERE user_id = ?", TAB_NAME_PROFILE)
-	_, err := d.dbMaster.Query(sqlString, userId)
+	rows, err := d.dbMaster.Query(sqlString, userId)
+	defer rows.Close()
 	if err != nil {
-		logger.Error("Fail to delete from sql DB, err: ", err.Error())
+		d.logger.Error(ctx, "Fail to delete from sql DB, err: ", err.Error())
 		return err
 	}
-	logger.Info("Delete profile from sql DB succeed.")
+	d.logger.Info(ctx, "Delete profile from sql DB succeed.")
 
 	// 2. delete data from redis.
 	d.deleteFromCache(ctx, userId)
@@ -133,18 +137,19 @@ func (d *ProfileDao) Delete(ctx context.Context, userId uint64) error {
 	return nil
 }
 
-func (d *ProfileDao) Insert(profile *model.Profile) error {
+func (d *ProfileDao) Insert(ctx context.Context, profile *model.Profile) error {
 	// we don't operate cache in insert. Cache data will be load when read.
-	logger.Info("Call ProfileDao.Insert, profile: ", profile)
+	d.logger.Info(ctx, "Call ProfileDao.Insert, profile: ", profile)
 	updateFields, args := profile.UpdateFields()
 	sqlString := profile.InsertSql(updateFields, TAB_NAME_PROFILE)
-	_, err := d.dbMaster.Query(sqlString, args...)
-	logger.Debug("sql: ", sqlString)
+	rows, err := d.dbMaster.Query(sqlString, args...)
+	defer rows.Close()
+	d.logger.Debug(ctx, "sql: ", sqlString)
 	if err != nil {
-		logger.Error("Fail to insert into sql DB, err: ", err.Error(), " sql: ", sqlString, " args: ", args)
+		d.logger.Error(ctx, "Fail to insert into sql DB, err: ", err.Error(), " sql: ", sqlString, " args: ", args)
 		return err
 	}
-	logger.Info("Insert profile into sql DB succeed.")
+	d.logger.Info(ctx, "Insert profile into sql DB succeed.")
 
 	return nil
 }
@@ -155,7 +160,7 @@ func (d *ProfileDao) deleteFromCache(ctx context.Context, userId uint64) {
 	// if delete failed, other process might read the dirty data.
 	// since we have set an expiration time on it, it'll be eventually consist.
 	if err != nil {
-		logger.Error("Fail to delete from cache, err: ", err.Error())
+		d.logger.Error(ctx, "Fail to delete from cache, err: ", err.Error())
 	}
-	logger.Info("Delete profile from cache succeed.")
+	d.logger.Info(ctx, "Delete profile from cache succeed.")
 }

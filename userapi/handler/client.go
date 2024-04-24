@@ -1,7 +1,21 @@
 package handler
 
-import "protos/userinfo"
+import (
+	"context"
+	"loggers"
+	"protos/userinfo"
+)
 
 type Client struct {
-	UserinfoClient userinfo.UserinfoService
+	context        context.Context
+	userinfoClient userinfo.UserinfoService
+	logger         *logger.Logger
+}
+
+func NewClient(context context.Context, userinfoClient userinfo.UserinfoService, logger *logger.Logger) *Client {
+	return &Client{
+		context:        context,
+		userinfoClient: userinfoClient,
+		logger:         logger,
+	}
 }

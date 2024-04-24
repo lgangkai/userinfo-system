@@ -2,40 +2,42 @@ package account
 
 import (
 	"context"
-	"github.com/asim/go-micro/v3/logger"
+	"loggers"
 	"protos/userinfo"
 	"user-server/service/account"
 )
 
 type AccountBiz struct {
 	accountService *account.AccountService
+	logger         *logger.Logger
 }
 
-func NewAccountBiz(accountService *account.AccountService) *AccountBiz {
+func NewAccountBiz(accountService *account.AccountService, logger *logger.Logger) *AccountBiz {
 	return &AccountBiz{
 		accountService: accountService,
+		logger:         logger,
 	}
 }
 
 func (b *AccountBiz) Register(ctx context.Context, in *userinfo.RegisterRequest, out *userinfo.RegisterResponse) error {
-	logger.Info("Call AccountBiz.Register, request: ", in)
-	err := b.accountService.Register(in.GetEmail(), in.GetPassword())
+	b.logger.Info(ctx, "Call AccountBiz.Register, request: ", in)
+	err := b.accountService.Register(ctx, in.GetEmail(), in.GetPassword())
 	if err != nil {
-		logger.Error("Register failed, err: ", err.Error())
+		b.logger.Error(ctx, "Register failed, err: ", err.Error())
 		return err
 	}
-	logger.Info("Call AccountBiz.Register successfully.")
+	b.logger.Info(ctx, "Call AccountBiz.Register successfully.")
 	return nil
 }
 
 func (b *AccountBiz) Login(ctx context.Context, in *userinfo.LoginRequest, out *userinfo.LoginResponse) error {
-	logger.Info("Call AccountBiz.Login, request: ", in)
-	token, err := b.accountService.Login(in.GetEmail(), in.GetPassword())
+	b.logger.Info(ctx, "Call AccountBiz.Login, request: ", in)
+	token, err := b.accountService.Login(ctx, in.GetEmail(), in.GetPassword())
 	if err != nil {
-		logger.Error("Login failed, err: ", err.Error())
+		b.logger.Error(ctx, "Login failed, err: ", err.Error())
 		return err
 	}
-	logger.Info("Call AccountBiz.Login successfully.")
+	b.logger.Info(ctx, "Call AccountBiz.Login successfully.")
 	out.Token = *token
 	return nil
 }
@@ -47,13 +49,13 @@ func (b *AccountBiz) Logout(ctx context.Context, in *userinfo.LogoutRequest, out
 }
 
 func (b *AccountBiz) Authenticate(ctx context.Context, in *userinfo.AuthRequest, out *userinfo.AuthResponse) error {
-	logger.Info("Call AccountBiz.Authenticate, request: ", in)
-	userId, email, err := b.accountService.Authenticate(in.GetToken())
+	b.logger.Info(ctx, "Call AccountBiz.Authenticate, request: ", in)
+	userId, email, err := b.accountService.Authenticate(ctx, in.GetToken())
 	if err != nil {
-		logger.Error("Authenticate failed, err: ", err.Error())
+		b.logger.Error(ctx, "Authenticate failed, err: ", err.Error())
 		return err
 	}
-	logger.Info("Call AccountBiz.Authenticate successfully.")
+	b.logger.Info(ctx, "Call AccountBiz.Authenticate successfully.")
 	out.UserId = userId
 	out.Email = email
 	return nil

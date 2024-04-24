@@ -4,24 +4,24 @@ import (
 	"encoding/json"
 	errs "errs"
 	"github.com/asim/go-micro/v3/errors"
-	"github.com/asim/go-micro/v3/logger"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"protos/userinfo"
 )
 
 func (c *Client) GetProfile(context *gin.Context) {
-	userId := c.getCookie(context, KEY_USER_ID)
+	userId := c.getAuthedData(context, KEY_USER_ID)
 	if userId == nil {
 		return
 	}
 
 	r := userinfo.GetProfileRequest{
-		UserId: userId.(uint64),
+		UserId:    userId.(uint64),
+		RequestId: GetRequestId(context),
 	}
-	resp, err := c.UserinfoClient.GetProfile(context, &r)
+	resp, err := c.userinfoClient.GetProfile(context, &r)
 	if err != nil {
-		logger.Error("Call rpc server failed, error: ", err)
+		c.logger.Error(c.context, "Call rpc server failed, error: ", err)
 		code := errors.Parse(err.Error()).Code
 		msg := errors.Parse(err.Error()).Detail
 		context.JSON(http.StatusInternalServerError, gin.H{
@@ -35,7 +35,7 @@ func (c *Client) GetProfile(context *gin.Context) {
 
 	p, err := json.Marshal(resp.GetProfile())
 	if err != nil {
-		logger.Error("Marshal profile tp json failed, err: ", err.Error())
+		c.logger.Error(c.context, "Marshal profile tp json failed, err: ", err.Error())
 		context.JSON(http.StatusInternalServerError, gin.H{
 			"code": errs.ERR_GET_PROFILE_FAILED,
 			"msg":  errs.GetMsg(errs.ERR_GET_PROFILE_FAILED),
@@ -45,7 +45,7 @@ func (c *Client) GetProfile(context *gin.Context) {
 		return
 	}
 
-	logger.Info("Handle get profile success, profile: ", string(p))
+	c.logger.Info(c.context, "Handle get profile success, profile: ", string(p))
 	context.JSON(http.StatusOK, gin.H{
 		"code": errs.SUCCESS,
 		"msg":  errs.GetMsg(errs.SUCCESS),
@@ -56,7 +56,7 @@ func (c *Client) GetProfile(context *gin.Context) {
 func (c *Client) UpdateProfile(context *gin.Context) {
 	profile := &Profile{}
 	if err := context.ShouldBind(profile); err != nil {
-		logger.Error("Bind request data error, err: ", err.Error())
+		c.logger.Error(c.context, "Bind request data error, err: ", err.Error())
 		context.JSON(http.StatusBadRequest, gin.H{
 			"code": errs.ERR_UPDATE_PROFILE_FAILED,
 			"msg":  errs.GetMsg(errs.ERR_UPDATE_PROFILE_FAILED),
@@ -66,7 +66,7 @@ func (c *Client) UpdateProfile(context *gin.Context) {
 		return
 	}
 
-	userId := c.getCookie(context, KEY_USER_ID)
+	userId := c.getAuthedData(context, KEY_USER_ID)
 	if userId == nil {
 		return
 	}
@@ -77,10 +77,11 @@ func (c *Client) UpdateProfile(context *gin.Context) {
 			Username: profile.Username,
 			Birthday: profile.Birthday,
 		},
+		RequestId: GetRequestId(context),
 	}
-	_, err := c.UserinfoClient.UpdateProfile(context, r)
+	_, err := c.userinfoClient.UpdateProfile(context, r)
 	if err != nil {
-		logger.Error("Call rpc server failed, error: ", err)
+		c.logger.Error(c.context, "Call rpc server failed, error: ", err)
 		code := errors.Parse(err.Error()).Code
 		msg := errors.Parse(err.Error()).Detail
 		context.JSON(http.StatusInternalServerError, gin.H{
@@ -92,7 +93,7 @@ func (c *Client) UpdateProfile(context *gin.Context) {
 		return
 	}
 
-	logger.Info("Handle update profile success.")
+	c.logger.Info(c.context, "Handle update profile success.")
 	context.JSON(http.StatusOK, gin.H{
 		"code": errs.SUCCESS,
 		"msg":  errs.GetMsg(errs.SUCCESS),
@@ -103,7 +104,7 @@ func (c *Client) UpdateProfile(context *gin.Context) {
 func (c *Client) CreateProfile(context *gin.Context) {
 	profile := &Profile{}
 	if err := context.ShouldBind(profile); err != nil {
-		logger.Error("Bind request data error, err: ", err.Error())
+		c.logger.Error(c.context, "Bind request data error, err: ", err.Error())
 		context.JSON(http.StatusBadRequest, gin.H{
 			"code": errs.ERR_CREATE_PROFILE_FAILED,
 			"msg":  errs.GetMsg(errs.ERR_CREATE_PROFILE_FAILED),
@@ -113,8 +114,8 @@ func (c *Client) CreateProfile(context *gin.Context) {
 		return
 	}
 
-	userId := c.getCookie(context, KEY_USER_ID)
-	email := c.getCookie(context, KEY_EMAIL)
+	userId := c.getAuthedData(context, KEY_USER_ID)
+	email := c.getAuthedData(context, KEY_EMAIL)
 	if userId == nil || email == nil {
 		return
 	}
@@ -125,10 +126,11 @@ func (c *Client) CreateProfile(context *gin.Context) {
 			Username: profile.Username,
 			Birthday: profile.Birthday,
 		},
+		RequestId: GetRequestId(context),
 	}
-	_, err := c.UserinfoClient.CreateProfile(context, r)
+	_, err := c.userinfoClient.CreateProfile(context, r)
 	if err != nil {
-		logger.Error("Call rpc server failed, error: ", err)
+		c.logger.Error(c.context, "Call rpc server failed, error: ", err)
 		code := errors.Parse(err.Error()).Code
 		msg := errors.Parse(err.Error()).Detail
 		context.JSON(http.StatusInternalServerError, gin.H{
@@ -140,7 +142,7 @@ func (c *Client) CreateProfile(context *gin.Context) {
 		return
 	}
 
-	logger.Info("Handle create profile success.")
+	c.logger.Info(c.context, "Handle create profile success.")
 	context.JSON(http.StatusOK, gin.H{
 		"code": errs.SUCCESS,
 		"msg":  errs.GetMsg(errs.SUCCESS),
@@ -148,10 +150,10 @@ func (c *Client) CreateProfile(context *gin.Context) {
 	})
 }
 
-func (c *Client) getCookie(context *gin.Context, key string) any {
+func (c *Client) getAuthedData(context *gin.Context, key string) any {
 	userId, ok := context.Get(key)
 	if !ok {
-		logger.Error("Get cookie failed, key: ", key)
+		c.logger.Error(c.context, "Get cookie failed, key: ", key)
 		context.JSON(http.StatusUnauthorized, gin.H{
 			"code": errs.ERR_AUTH_FAILED,
 			"msg":  errs.GetMsg(errs.ERR_AUTH_FAILED),
