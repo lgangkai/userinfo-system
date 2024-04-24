@@ -4,8 +4,101 @@ This is a simple Go (Golang) backend system example that users can register acco
 
 For more information about the project design, please refer to [the system design doc](User Infomation System Design.pdf).
 
+## Project Folder Structure
+```shell
+.
+├── README.md
+├── User Infomation System Design.pdf
+├── conf     # Config files for starting services.
+│   ├── etcd
+│   └── redis
+├── data     # Docker volumes.
+│   ├── etcd
+│   ├── mysql
+│   └── redis
+├── err      # Customized error with code and message.
+│   ├── errors.go
+│   ├── go.mod
+│   └── go.sum
+├── frontend # Webpages. Not finished.
+│   ├── index.html
+│   └── login.html
+├── logger   # Customized logger.
+│   ├── go.mod
+│   ├── go.sum
+│   └── logger.go
+├── proto    # Proto files and generated codes.
+│   ├── go.mod
+│   ├── go.sum
+│   └── userinfo
+│       ├── userinfo.pb.go
+│       ├── userinfo.pb.micro.go
+│       └── userinfo.proto
+├── script   # Scripts for benchmark test, gen proto codes and mysql init.
+│   ├── benchmark_test
+│   │   ├── get_profile.lua
+│   │   ├── login.lua
+│   │   └── register.lua
+│   ├── gen-proto.sh
+│   └── init-db.sql
+├── userapi  # Api gateway service.
+│   ├── Dockerfile
+│   ├── conf   # Config file to init the service.
+│   │   ├── config.go
+│   │   └── userapi.yaml
+│   ├── go.mod
+│   ├── go.sum
+│   ├── handler # Gin web handlers and middlewares.
+│   │   ├── account.go
+│   │   ├── client.go
+│   │   ├── middleware.go
+│   │   ├── model.go
+│   │   └── profile.go
+│   ├── main.go
+│   └── server.go
+└── userinfo  # Userinfo service.
+    ├── Dockerfile
+    ├── biz   # Biz layer. Technically do some verifications, forward requests and adapt responses.
+    │   ├── account
+    │   │   └── account_biz.go
+    │   └── profile
+    │       └── profile_biz.go
+    ├── conf  # Config file to init the service.
+    │   ├── config.go
+    │   └── userinfo.yaml
+    ├── dao   # Dao layer. Directly contact database and cache.
+    │   ├── db.go
+    │   ├── profile_dao.go
+    │   ├── profile_dao_test.go
+    │   └── user_dao.go
+    ├── go.mod
+    ├── go.sum
+    ├── handler # Handler layer. Forward requests from rpc client.
+    │   └── userinfo_handler.go
+    ├── main.go
+    ├── model   # Data structure.
+    │   ├── profile.go
+    │   ├── profile_test.go
+    │   └── user.go
+    ├── server.go
+    ├── service # Service layer. Implement core business requirements.
+    │   ├── account
+    │   │   └── account_service.go
+    │   └── profile
+    │       └── profile_service.go
+    └── wire    # Wire for dependency injection.
+        ├── wire.go
+        └── wire_gen.go
+
+```
+
 ## Deployment
-We can run this project on the local environment by docker, assuming you already have docker on you environment. To run it, we need to deploy all components, including frontend, nginx, userapi, userinfo, mysql, redis, and etcd.
+We can run this project on the local environment by docker, assuming you already have docker on you environment. To run it, we need to deploy all components, including frontend, nginx, userapi, userinfo, mysql, redis, and etcd. Here is the deployment structure for this project:
+
+<div align=center>
+	<img src="./deployment.png"/>
+</div>
+
 ### Clone
 ```shell
 # move into your working dir.
@@ -18,7 +111,7 @@ git clone git@github.com:lgangkai/userinfo-system.git
 cd userinfo-system
 ```
 ### Docker network
-Because we will run this project on a single machine, which is your own PC, we need to use docker custom networks to connect associated containers and isolate different clusters. The network framework is indicated as follows:  
+Because we will run this project on a single machine, which is your own PC, we need to use docker custom networks to connect associated containers and isolate different clusters. Here we create networks for each cluster.
 ```shell
 # create docker networks.
 docker network create --driver bridge userapi 
@@ -48,7 +141,7 @@ qwer1234
 CREATE DATABASE userinfo;
 # do same operations for mysql-slave node.
 ```
-To realize master/slave replication, we need to add configs to my.cnf file. 
+To implement master/slave replication, we need to add configs to my.cnf file. 
 ```shell
 docker cp mysql-master:/etc/my.cnf ./
 ```
@@ -93,7 +186,7 @@ SHOW master status;
 | master-bin.000001 |     1109 | userinfo     |                  |                   |
 +-------------------+----------+--------------+------------------+-------------------+
 ```
-And config on slave node under mysql service.
+And config slave node under mysql service.
 ```shell
 CHANGE MASTER TO
 MASTER_HOST='mysql-master',
@@ -133,7 +226,7 @@ source init-db.sql
 
 
 ### Redis
-Similarly, for redis, we will deploy a redis cluster with typically 6-node structure containing 3 master nodes and 3 slave nodes, in order to reach a high availability and load balance. 
+Similarly, for redis, we will deploy a redis cluster with a typically 6-node structure containing 3 master nodes and 3 slave nodes, in order to reach a high availability and load balance. 
 ```shell
 # 1. Use shell script to write 6 redis config files.
 for node in $(seq 0 5); \
@@ -189,7 +282,7 @@ get foo
 # if you restart node2, you will find node2 now becoming slave node.
 ```
 ### etcd
-We use etcd to register and find our microservice. Here we deploy the etcd cluster with three nodes.
+We use etcd to register and discover our microservice. Here we deploy the etcd cluster with three nodes.
 ```shell
 # run an etcd container using the config file
 docker run -d -p 2379:2379 -p 2380:2380 --net etcd-cluster -v ./data/etcd/node0:/etcd-data -v ./conf/etcd:/etcdconf \
@@ -329,18 +422,53 @@ server {
 ```shell
 nginx -s reload
 ```
-docker build -t userinfo -f ./userinfo/Dockerfile .
-docker build -t userapi .
-
-docker run --name userinfo --net etcd-cluster userinfo-node0
-
-
-docker exec etcd0 /usr/local/bin/etcdctl get / --prefix --keys-only=true
-
-dock
-
-tips：the address must be set to 0.0.0.0 or you can not access container from host browser
-
-go install github.com/asim/go-micro/cmd/protoc-gen-micro/v3@latest
-
-ab -n 10000 -c 100 -C 'access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTM5NDIwNzUsInVzZXJfaWQiOjEsImVtYWlsIjoiMTIzQGdtYWlsLmNvbSJ9.NY7_6E3nt_P2X9fTNofscnUPi9nwVeC6WWqZiLiAaz0; Path=/; HttpOnly; Expires=Wed, 24 Apr 2024 07:01:15 GMT;' http://localhost/api/user/profile
+#### Now all deployments are successfully done, you can check these APIs by sending requests:
+[API Request Examples](https://documenter.getpostman.com/view/21088903/2sA3BrXpok)
+## Benchmark Test
+At last let's do some benchmark tests to check the performance of our system. Here we use wrk and lua scripts to conduct it.
+* Install wrk
+```shell
+git clone --depth=1 https://github.com/wg/wrk.git
+cd wrk
+make -j
+```
+* Run wrk command
+```shell
+wrk -t5 -c10 -d 10s -T5s --latency -s ./script/benchmark_test/register.lua http://localhost
+```
+This command execute benchmarking with *5 threads, 10 connections, 10 sec duration and lua scripts located on /script/benchmark_test/register.lua*. Here is the result for my case:
+```shell
+Running 10s test @ http://localhost  
+  5 threads and 10 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     3.17ms    2.47ms  33.87ms   83.86%
+    Req/Sec   574.18    163.88     1.00k    73.29%
+  Latency Distribution
+     50%    2.03ms
+     75%    4.07ms
+     90%    6.61ms
+     99%   11.24ms
+  17689 requests in 10.05s, 4.30MB read
+  Socket errors: connect 0, read 0, write 0, timeout 9
+  Non-2xx or 3xx responses: 14125
+Requests/sec:   1760.54
+Transfer/sec:    438.60KB
+```
+Well, actually not that bad. Let's try get_profile api.
+```shell
+wrk -t5 -c10 -d 10s -T5s --latency -s ./script/benchmark_test/get_profile.lua http://localhost
+Running 10s test @ http://localhost
+  5 threads and 10 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     2.67ms    1.95ms  37.81ms   93.93%
+    Req/Sec   810.29    121.17     0.99k    77.20%
+  Latency Distribution
+     50%    2.22ms
+     75%    2.73ms
+     90%    3.69ms
+     99%   11.65ms
+  40396 requests in 10.04s, 11.90MB read
+Requests/sec:   4024.82
+Transfer/sec:      1.19MB
+```
+Since we use cache for query in this system, the QPS of get_profile api is much higher than register, while the TP99 values are close. Similarly, you can test other API by writing lua scripts. You may refer the existing codes to write your own.
