@@ -438,37 +438,35 @@ wrk -t5 -c10 -d 10s -T5s --latency -s ./script/benchmark_test/register.lua http:
 ```
 This command execute benchmarking with *5 threads, 10 connections, 10 sec duration and lua scripts located on /script/benchmark_test/register.lua*. Here is the result for my case:
 ```shell
-Running 10s test @ http://localhost  
-  5 threads and 10 connections
-  Thread Stats   Avg      Stdev     Max   +/- Stdev
-    Latency     3.17ms    2.47ms  33.87ms   83.86%
-    Req/Sec   574.18    163.88     1.00k    73.29%
-  Latency Distribution
-     50%    2.03ms
-     75%    4.07ms
-     90%    6.61ms
-     99%   11.24ms
-  17689 requests in 10.05s, 4.30MB read
-  Socket errors: connect 0, read 0, write 0, timeout 9
-  Non-2xx or 3xx responses: 14125
-Requests/sec:   1760.54
-Transfer/sec:    438.60KB
-```
-Well, actually not that bad. Let's try get_profile api.
-```shell
-wrk -t5 -c10 -d 10s -T5s --latency -s ./script/benchmark_test/get_profile.lua http://localhost
 Running 10s test @ http://localhost
   5 threads and 10 connections
   Thread Stats   Avg      Stdev     Max   +/- Stdev
-    Latency     2.67ms    1.95ms  37.81ms   93.93%
-    Req/Sec   810.29    121.17     0.99k    77.20%
+    Latency     6.00ms    2.68ms  41.61ms   80.68%
+    Req/Sec   339.49     33.33   404.00     77.00%
   Latency Distribution
-     50%    2.22ms
-     75%    2.73ms
-     90%    3.69ms
-     99%   11.65ms
-  40396 requests in 10.04s, 11.90MB read
-Requests/sec:   4024.82
-Transfer/sec:      1.19MB
+     50%    5.59ms
+     75%    7.14ms
+     90%    8.71ms
+     99%   15.27ms
+  16943 requests in 10.03s, 4.09MB read
+  Non-2xx or 3xx responses: 13554
+Requests/sec:   1689.30
+Transfer/sec:    417.91KB
 ```
-Since we use cache for query in this system, the QPS of get_profile api is much higher than register, while the TP99 values are close. Similarly, you can test other API by writing lua scripts. You may refer the existing codes to write your own.
+Well, actually not that bad. Let's try get_profile api.
+```shell
+Running 10s test @ http://localhost
+  5 threads and 10 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     2.26ms    1.52ms  32.42ms   92.95%
+    Req/Sec     0.94k    92.39     1.09k    75.60%
+  Latency Distribution
+     50%    1.89ms
+     75%    2.28ms
+     90%    3.16ms
+     99%    8.23ms
+  46975 requests in 10.02s, 13.84MB read
+Requests/sec:   4687.43
+Transfer/sec:      1.38MB
+```
+Since we use cache for query in this system, the QPS of get_profile api is improved than register, as well as the TP99 values. Similarly, you can test other API by writing lua scripts. You may refer the existing codes to write your own.

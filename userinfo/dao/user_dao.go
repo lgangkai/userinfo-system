@@ -47,8 +47,7 @@ func (d *UserDao) Insert(ctx context.Context, user *model.User) error {
 	d.logger.Info(ctx, "Call UserDao.Insert, user: ", user)
 	updateFields, args := user.UpdateFields()
 	sqlString := user.InsertSql(updateFields, TAB_NAME_USER)
-	rows, err := d.db.Query(sqlString, args...)
-	defer rows.Close()
+	_, err := d.db.Exec(sqlString, args...)
 	d.logger.Debug(ctx, "sql: ", sqlString)
 	if err != nil {
 		d.logger.Error(ctx, "Fail to insert into sql DB, err: ", err.Error())

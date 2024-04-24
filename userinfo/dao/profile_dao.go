@@ -104,8 +104,7 @@ func (d *ProfileDao) Update(ctx context.Context, userId uint64, profile *model.P
 	updateFields, args := profile.UpdateFields()
 	sqlString := profile.UpdateSql(updateFields, TAB_NAME_PROFILE)
 	d.logger.Debug(ctx, "sql: ", sqlString)
-	rows, err := d.dbMaster.Query(sqlString, append(args, userId)...)
-	defer rows.Close()
+	_, err := d.dbMaster.Exec(sqlString, append(args, userId)...)
 	if err != nil {
 		d.logger.Error(ctx, "Fail to update to sql DB, err: ", err.Error())
 		return err
@@ -123,8 +122,7 @@ func (d *ProfileDao) Delete(ctx context.Context, userId uint64) error {
 	// 1. delete data from mysql-master.
 	d.logger.Info(ctx, "Call ProfileDao.Delete.")
 	sqlString := fmt.Sprintf("DELETE FROM %v WHERE user_id = ?", TAB_NAME_PROFILE)
-	rows, err := d.dbMaster.Query(sqlString, userId)
-	defer rows.Close()
+	_, err := d.dbMaster.Exec(sqlString, userId)
 	if err != nil {
 		d.logger.Error(ctx, "Fail to delete from sql DB, err: ", err.Error())
 		return err
@@ -142,8 +140,7 @@ func (d *ProfileDao) Insert(ctx context.Context, profile *model.Profile) error {
 	d.logger.Info(ctx, "Call ProfileDao.Insert, profile: ", profile)
 	updateFields, args := profile.UpdateFields()
 	sqlString := profile.InsertSql(updateFields, TAB_NAME_PROFILE)
-	rows, err := d.dbMaster.Query(sqlString, args...)
-	defer rows.Close()
+	_, err := d.dbMaster.Exec(sqlString, args...)
 	d.logger.Debug(ctx, "sql: ", sqlString)
 	if err != nil {
 		d.logger.Error(ctx, "Fail to insert into sql DB, err: ", err.Error(), " sql: ", sqlString, " args: ", args)
