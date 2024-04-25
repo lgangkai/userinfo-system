@@ -47,7 +47,7 @@ func (s *AccountService) Register(ctx context.Context, email string, password st
 	//   1.2 if err is sql DB internal error, return error.
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		s.logger.Error(ctx, "sql DB internal error, err: ", err.Error())
-		return errs.New(errs.ERR_REGISTER_GET_USER_FAILED)
+		return errs.New(errs.ERR_REGISTER_INTERNAL)
 	}
 
 	// 2. save email and password.

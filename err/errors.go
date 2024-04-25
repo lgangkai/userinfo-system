@@ -10,16 +10,15 @@ const (
 	ERR_DELETE_PROFILE_FAILED = 100003
 	ERR_CREATE_PROFILE_FAILED = 100004
 
-	ERR_EMAIL_IS_REGISTERED      = 200001
-	ERR_REGISTER_GET_USER_FAILED = 200002
-	ERR_REGISTER_INTERNAL        = 200003
-	ERR_REGISTER_REQUEST         = 200004
-	ERR_LOGIN_NO_USER            = 200005
-	ERR_LOGIN_INTERNAL           = 200006
-	ERR_LOGIN_REQUEST            = 200007
-	ERR_PASSWORD_MISMATCH        = 200008
-	ERR_AUTH_FAILED              = 200009
-	ERR_TOKEN_EXPIRED            = 200010
+	ERR_EMAIL_IS_REGISTERED = 200001
+	ERR_REGISTER_INTERNAL   = 200002
+	ERR_REGISTER_REQUEST    = 200003
+	ERR_LOGIN_NO_USER       = 200004
+	ERR_LOGIN_INTERNAL      = 200005
+	ERR_LOGIN_REQUEST       = 200006
+	ERR_PASSWORD_MISMATCH   = 200007
+	ERR_AUTH_FAILED         = 200008
+	ERR_TOKEN_EXPIRED       = 200009
 )
 
 var errMsg = map[int32]string{
@@ -30,16 +29,15 @@ var errMsg = map[int32]string{
 	ERR_DELETE_PROFILE_FAILED: "Delete profile failed.",
 	ERR_CREATE_PROFILE_FAILED: "Create profile failed.",
 
-	ERR_EMAIL_IS_REGISTERED:      "Register failed, email has been registered.",
-	ERR_REGISTER_GET_USER_FAILED: "Register failed, query db failed.",
-	ERR_REGISTER_INTERNAL:        "Register failed, internal server error.",
-	ERR_REGISTER_REQUEST:         "Register failed, bad request.",
-	ERR_LOGIN_NO_USER:            "Login failed, no such user",
-	ERR_LOGIN_INTERNAL:           "Login failed, internal server error.",
-	ERR_PASSWORD_MISMATCH:        "Login failed, password mismatch.",
-	ERR_LOGIN_REQUEST:            "Login failed, bad request.",
-	ERR_AUTH_FAILED:              "Auth failed, invalid token.",
-	ERR_TOKEN_EXPIRED:            "Auth failed, login status expired",
+	ERR_EMAIL_IS_REGISTERED: "Register failed, email has been registered.",
+	ERR_REGISTER_INTERNAL:   "Register failed, internal server error.",
+	ERR_REGISTER_REQUEST:    "Register failed, bad request.",
+	ERR_LOGIN_NO_USER:       "Login failed, no such user.",
+	ERR_LOGIN_INTERNAL:      "Login failed, internal server error.",
+	ERR_PASSWORD_MISMATCH:   "Login failed, password mismatch.",
+	ERR_LOGIN_REQUEST:       "Login failed, bad request.",
+	ERR_AUTH_FAILED:         "Auth failed, invalid token.",
+	ERR_TOKEN_EXPIRED:       "Auth failed, login status expired",
 }
 
 func New(code int32) error {
